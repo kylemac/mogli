@@ -1,7 +1,7 @@
 require 'mogli/model/search'
 
 module Mogli
-  class Model  
+  class Model
     extend Mogli::Model::Search
 
     set_search_type :all
@@ -33,7 +33,7 @@ module Mogli
         # hash entries get added...
         if post_params[key].nil? && self.respond_to?(key.to_sym) && !(val=self.send(key.to_sym)).nil?
            post_params[key] = if val.is_a?(Array)
-                                "[#{val.map { |v| v.respond_to?(:to_json) ? v.to_json : nil }.compact.join(',')}]"  
+                                "[#{val.map { |v| v.respond_to?(:to_json) ? v.to_json : nil }.compact.join(',')}]"
                              elsif val.respond_to?(:to_json)
                                val.to_json
                              else
@@ -76,8 +76,8 @@ module Mogli
         @_values[arg.to_s] = val
       end
     end
-    
-        
+
+
 
     def self.define_properties(*args)
       args.each do |arg|
@@ -136,22 +136,29 @@ module Mogli
       merge!(other) if other
       self
     end
-    
+
     def ==(other)
       other.is_a?(Model) and self.id == other.id
     end
-    
+
     def merge!(other)
       @_values.merge!(other.instance_variable_get("@_values"))
     end
-    
+
     def self.recognize?(data)
       true
     end
 
     def self.find(id,client=nil, *fields)
-      body_args = fields.empty? ? {} : {:fields => fields.join(',')}
+      if fields.first.is_a?(Hash)
+        body_args = fields.first
+      elsif fields.is_a?(Array)
+        body_args = {:fields => fields.join(',')}
+      else
+        body_args = {}
+      end
       (id, body_args[:ids] = "", id.join(',')) if id.is_a?(Array)
+      (id = "#{id}/insights") if fields.first.is_a?(Hash) # add 'insights' to the url if passed a hash
       (client||Mogli::Client.new).get_and_map(id,self, body_args)
     end
 
